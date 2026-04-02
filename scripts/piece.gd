@@ -32,6 +32,7 @@ const RECT_MAPPING = {
 }
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	z_index += 1
 	sprite.region_rect =  Rect2(
 		RECT_MAPPING[color][type],
 		Vector2(sprite_size, sprite_size)
