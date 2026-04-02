@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://cgeqodglknkve"]
+
+[ext_resource type="Texture2D" uid="uid://d3t44to2lt86e" path="res://assets/pieces/checkers_topDown Wood_v.png" id="1_gebih"]
+[ext_resource type="Script" uid="uid://c0ruscnw0jnch" path="res://scripts/piece.gd" id="1_s58gp"]
+[ext_resource type="Script" uid="uid://c84d4x8g8at1t" path="res://scripts/area_2d.gd" id="2_h2rng"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_m0mde"]
+radius = 7.0
+
+[node name="Piece" type="Node2D" unique_id=1193267202]
+script = ExtResource("1_s58gp")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=978555998]
+script = ExtResource("2_h2rng")
+
+[node name="Sprite2D" type="Sprite2D" parent="Area2D" unique_id=1688319818]
+texture = ExtResource("1_gebih")
+region_enabled = true
+region_rect = Rect2(0, 0, 16, 16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=604394403]
+shape = SubResource("CircleShape2D_m0mde")
+
+[connection signal="mouse_entered" from="Area2D" to="." method="_on_area_2d_mouse_entered"]
+[connection signal="mouse_exited" from="Area2D" to="." method="_on_area_2d_mouse_exited"]
