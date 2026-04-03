@@ -1,7 +1,8 @@
 extends Node
 
-
+var is_dragging = false
 const CELL_SIZE = 16
+const OFFSET_PIECE = globals.CELL_SIZE/2
 const SPRITE_SIZE = 16
 enum PIECE_TYPES {
 	COMMON, PROMOTED
