@@ -10,7 +10,7 @@ var color: globals.PIECE_COLORS
 var board_handle: Board
 var is_dragging = false
 var last_position = Vector2(0.0, 0.0)
-var cell
+var cell: Cell
 
 const RECT_MAPPING = {
 	globals.PIECE_COLORS.WHITE: {

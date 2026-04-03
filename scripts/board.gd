@@ -27,7 +27,7 @@ func init_board():
 				x * cell_size,
 				y * cell_size
 			)
-			cell.board_coordinate = coordinates
+			cell.board_coordinate = [coordinates[0] + 1, coordinates[1] + 1]
 			cell.color = light_cell_color if (x + y) % 2 == 0 else dark_cell_color
 			add_child(cell)
 			
@@ -53,8 +53,8 @@ func set_piece(pos: Vector2, color: globals.PIECE_COLORS):
 	
 func _on_piece_droped(piece: Piece):
 	adjust_piece_placement(piece)
-	var cell = get_cell(piece.position)
-	if cell.piece or  not is_valid_move(piece.position, piece.last_position):
+	var cell = get_cell(get_board_coordinates(piece.position))
+	if not is_valid_move(piece, cell):
 		piece.position = piece.last_position
 	else:
 		piece.last_position = piece.position
@@ -62,10 +62,9 @@ func _on_piece_droped(piece: Piece):
 		piece.cell = cell
 		cell.piece = piece
 	
-func get_cell(pos: Vector2):
-	var board_coordinates = get_board_coordinates(pos)
+func get_cell(board_coordinates: Array):
 	for cell in cells:
-		if [cell.board_coordinate[0] + 1, cell.board_coordinate[1] + 1] == board_coordinates:
+		if [cell.board_coordinate[0], cell.board_coordinate[1]] == board_coordinates:
 			return cell
 	
 func get_board_coordinates(pos: Vector2):
@@ -78,7 +77,36 @@ func adjust_piece_placement(piece: Piece):
 	piece.position.x = -globals.OFFSET_PIECE + board_coordinates[0] * globals.CELL_SIZE
 	piece.position.y = -globals.OFFSET_PIECE + board_coordinates[1] * globals.CELL_SIZE
 	
-func is_valid_move(dest, source):
-	if dest.x > 128 or dest.y > 128 or dest.x < 0 or dest.y < 0:
+func is_valid_move(piece: Piece, dest_cell: Cell):
+	var dest_coordinate = get_board_coordinates(piece.position)
+	if piece.position.x > 128 or piece.position.y > 128 or piece.position.x < 0 or piece.position.y < 0:
 		return false
+	if dest_cell.piece:
+		return false
+	var diff = get_coordinate_diff(piece.cell.board_coordinate, dest_coordinate)
+	print("diff", diff)
+	if diff[0] > 2 or diff[1] > 2:
+		return false
+	elif diff[0] > 1 and diff[1] > 1:
+		var walk = -1 if piece.color == globals.PIECE_COLORS.WHITE else -1
+		var middle_cell = get_cell([dest_coordinate[0] + walk, dest_coordinate[1] + walk])
+		print("board_coordinate",middle_cell.board_coordinate)
+		if not middle_cell.piece:
+			return false
+		elif middle_cell.piece.color == piece.color:
+			return false
+		else:
+			middle_cell.piece.queue_free()
+	elif diff[0] != diff[1]:
+		return false
+		
+		
 	return true
+
+func get_coordinate_diff(initial: Array, dest: Array):
+	print("intial", initial)
+	print("dest", dest)
+	return [
+		abs(initial[0] - dest[0]),
+		abs(initial[1] - dest[1]),
+	]
