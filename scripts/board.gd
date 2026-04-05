@@ -62,12 +62,13 @@ func _on_piece_droped(piece: Piece):
 		piece.cell = cell
 		cell.piece = piece
 		if should_promote(piece):
-			promote(piece)
+			piece.promote()
 	
-func get_cell(board_coordinates: Array):
+func get_cell(board_coordinates: Array) -> Cell:
 	for cell in cells:
 		if [cell.board_coordinate[0], cell.board_coordinate[1]] == board_coordinates:
 			return cell
+	return null
 	
 func get_board_coordinates(pos: Vector2):
 	var rounded_x = round(pos[0])
@@ -82,37 +83,63 @@ func adjust_piece_placement(piece: Piece):
 func is_valid_move(piece: Piece, dest_cell: Cell):
 	var dest_coordinate = get_board_coordinates(piece.position)
 	var last_coordinate = get_board_coordinates(piece.last_position)
-	print("last", last_coordinate)
-	if piece.position.x > 128 or piece.position.y > 128 or piece.position.x < 0 or piece.position.y < 0:
+	var diff = get_coordinate_diff(piece.cell.board_coordinate, dest_coordinate)
+	if dest_coordinate[0] > 8 or dest_coordinate[1] > 8 or dest_coordinate[0] < 1 or dest_coordinate[1] < 1:
 		return false
 	if dest_cell.piece:
 		return false
-	var diff = get_coordinate_diff(piece.cell.board_coordinate, dest_coordinate)
-	print("diff", diff)
 	if diff[0] != diff[1]:
 		return false
-	elif piece.type == globals.PIECE_TYPES.PROMOTED:
-		return true
-	elif diff[0] > 2 or diff[1] > 2:
-		return false
-	elif diff[0] > 1 and diff[1] > 1:
-		var middle_x = dest_coordinate[0] + 1 if dest_coordinate[0] < last_coordinate[0] else dest_coordinate[0] - 1
-		var middle_y = dest_coordinate[1] + 1 if dest_coordinate[1] < last_coordinate[1] else dest_coordinate[1] - 1
-		var middle_cell = get_cell([middle_x, middle_y])
-		print("middle",middle_cell.board_coordinate)
-		if not middle_cell.piece:
+	if piece.type == globals.PIECE_TYPES.COMMON:
+		if diff[0] > 2 or diff[1] > 2:
 			return false
-		elif middle_cell.piece.color == piece.color:
+		elif diff[0] > 1 and diff[1] > 1:
+			var middle_x = dest_coordinate[0] + 1 if dest_coordinate[0] < last_coordinate[0] else dest_coordinate[0] - 1
+			var middle_y = dest_coordinate[1] + 1 if dest_coordinate[1] < last_coordinate[1] else dest_coordinate[1] - 1
+			var middle_cell = get_cell([middle_x, middle_y])
+			print("middle",middle_cell.board_coordinate)
+			if not middle_cell.piece:
+				return false
+			elif middle_cell.piece.color == piece.color:
+				return false
+			else:
+				middle_cell.piece.queue_free()
+		elif diff[0] > 0 and diff[1] > 0:
+			if (
+				dest_coordinate[1] < last_coordinate[1] and piece.color == globals.PIECE_COLORS.WHITE or
+				dest_coordinate [1] > last_coordinate[1] and piece.color == globals.PIECE_COLORS.BLACK
+			):
+				return false
+	else:
+		var cells_found = beam_piece_search(last_coordinate, dest_coordinate)
+		if len(cells_found) > 1:
 			return false
-		else:
-			middle_cell.piece.queue_free()
-	elif diff[0] > 0 and diff[1] > 0:
-		if (
-			dest_coordinate[1] < last_coordinate[1] and piece.color == globals.PIECE_COLORS.WHITE or
-			dest_coordinate [1] > last_coordinate[1] and piece.color == globals.PIECE_COLORS.BLACK
-		):
-			return false
+		if len(cells_found) == 1:
+			if cells_found[0].color == piece.color:
+				return false
+			else:
+				cells_found[0].queue_free()
 	return true
+	
+func beam_piece_search(last: Array, dest: Array) -> Array[Piece]:
+	var pieces_found: Array[Piece] = []
+	var direction_x = 1 if dest[0] > last[0] else -1
+	var direction_y = 1 if dest[1] > last[1] else -1
+	var current_coord = [last[0] + direction_x, last[1] + direction_y]
+	while (
+		(8 > current_coord[0] and current_coord[0] > 0) and 
+		(8 > current_coord[1] and current_coord[1] > 0) 
+	):
+		if current_coord == dest:
+			break
+		var found_cell = get_cell(current_coord)
+		if found_cell.piece:
+			pieces_found.append(found_cell.piece)
+		current_coord[0] += direction_x
+		current_coord[1] += direction_y
+		
+	return pieces_found
+		
 
 func get_coordinate_diff(initial: Array, dest: Array):
 	print("intial", initial)
@@ -131,7 +158,3 @@ func should_promote(piece: Piece):
 	):
 		return true
 	return false
-	
-func promote(piece):
-	piece.type = globals.PIECE_TYPES.PROMOTED
-	piece.promote()
