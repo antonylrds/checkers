@@ -32,9 +32,9 @@ func init_board():
 			add_child(cell)
 			
 			if coordinates in globals.INITIAL_POSITION_MAPPING[globals.PIECE_COLORS.WHITE]:
-				piece = set_piece(Vector2(x, y), globals.PIECE_COLORS.WHITE)
+				piece = instantiate_piece(Vector2(x, y), globals.PIECE_COLORS.WHITE)
 			elif coordinates in globals.INITIAL_POSITION_MAPPING[globals.PIECE_COLORS.BLACK]:
-				piece = set_piece(Vector2(x, y), globals.PIECE_COLORS.BLACK)
+				piece = instantiate_piece(Vector2(x, y), globals.PIECE_COLORS.BLACK)
 			if piece:
 				piece.board_handle = self
 				cell.piece = piece
@@ -43,7 +43,7 @@ func init_board():
 			cells.append(cell)
 			piece = null
 	
-func set_piece(pos: Vector2, color: globals.PIECE_COLORS):
+func instantiate_piece(pos: Vector2, color: globals.PIECE_COLORS):
 	var piece = piece_scene.instantiate()
 	piece.position = pos
 	piece.color = color
@@ -61,6 +61,8 @@ func _on_piece_droped(piece: Piece):
 		piece.cell.piece = null
 		piece.cell = cell
 		cell.piece = piece
+		if should_promote(piece):
+			promote(piece)
 	
 func get_cell(board_coordinates: Array):
 	for cell in cells:
@@ -87,7 +89,11 @@ func is_valid_move(piece: Piece, dest_cell: Cell):
 		return false
 	var diff = get_coordinate_diff(piece.cell.board_coordinate, dest_coordinate)
 	print("diff", diff)
-	if diff[0] > 2 or diff[1] > 2:
+	if diff[0] != diff[1]:
+		return false
+	elif piece.type == globals.PIECE_TYPES.PROMOTED:
+		return true
+	elif diff[0] > 2 or diff[1] > 2:
 		return false
 	elif diff[0] > 1 and diff[1] > 1:
 		var middle_x = dest_coordinate[0] + 1 if dest_coordinate[0] < last_coordinate[0] else dest_coordinate[0] - 1
@@ -100,10 +106,12 @@ func is_valid_move(piece: Piece, dest_cell: Cell):
 			return false
 		else:
 			middle_cell.piece.queue_free()
-	elif diff[0] != diff[1]:
-		return false
-	
-		
+	elif diff[0] > 0 and diff[1] > 0:
+		if (
+			dest_coordinate[1] < last_coordinate[1] and piece.color == globals.PIECE_COLORS.WHITE or
+			dest_coordinate [1] > last_coordinate[1] and piece.color == globals.PIECE_COLORS.BLACK
+		):
+			return false
 	return true
 
 func get_coordinate_diff(initial: Array, dest: Array):
@@ -113,3 +121,17 @@ func get_coordinate_diff(initial: Array, dest: Array):
 		abs(initial[0] - dest[0]),
 		abs(initial[1] - dest[1]),
 	]
+	
+func should_promote(piece: Piece):
+	if piece.type == globals.PIECE_TYPES.PROMOTED:
+		return false
+	if (
+		piece.color == globals.PIECE_COLORS.WHITE and piece.cell.board_coordinate[1] == 8 or
+		piece.color == globals.PIECE_COLORS.BLACK and piece.cell.board_coordinate[1] == 1
+	):
+		return true
+	return false
+	
+func promote(piece):
+	piece.type = globals.PIECE_TYPES.PROMOTED
+	piece.promote()

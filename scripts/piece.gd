@@ -71,6 +71,13 @@ func _input(event):
 func drop_piece():
 	z_index = 1
 	SignalBus.piece_moved.emit(self)
+	
+func promote():
+	type = globals.PIECE_TYPES.PROMOTED
+	sprite.region_rect =  Rect2(
+		RECT_MAPPING[color][type],
+		Vector2(sprite_size, sprite_size)
+	)
 
 func _on_area_2d_mouse_entered() -> void:
 	sprite.modulate = Color(1.5, 1.5, 1.5) # Glow effect
