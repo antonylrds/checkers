@@ -79,6 +79,8 @@ func adjust_piece_placement(piece: Piece):
 	
 func is_valid_move(piece: Piece, dest_cell: Cell):
 	var dest_coordinate = get_board_coordinates(piece.position)
+	var last_coordinate = get_board_coordinates(piece.last_position)
+	print("last", last_coordinate)
 	if piece.position.x > 128 or piece.position.y > 128 or piece.position.x < 0 or piece.position.y < 0:
 		return false
 	if dest_cell.piece:
@@ -88,9 +90,10 @@ func is_valid_move(piece: Piece, dest_cell: Cell):
 	if diff[0] > 2 or diff[1] > 2:
 		return false
 	elif diff[0] > 1 and diff[1] > 1:
-		var walk = -1 if piece.color == globals.PIECE_COLORS.WHITE else -1
-		var middle_cell = get_cell([dest_coordinate[0] + walk, dest_coordinate[1] + walk])
-		print("board_coordinate",middle_cell.board_coordinate)
+		var middle_x = dest_coordinate[0] + 1 if dest_coordinate[0] < last_coordinate[0] else dest_coordinate[0] - 1
+		var middle_y = dest_coordinate[1] + 1 if dest_coordinate[1] < last_coordinate[1] else dest_coordinate[1] - 1
+		var middle_cell = get_cell([middle_x, middle_y])
+		print("middle",middle_cell.board_coordinate)
 		if not middle_cell.piece:
 			return false
 		elif middle_cell.piece.color == piece.color:
@@ -99,7 +102,7 @@ func is_valid_move(piece: Piece, dest_cell: Cell):
 			middle_cell.piece.queue_free()
 	elif diff[0] != diff[1]:
 		return false
-		
+	
 		
 	return true
 
