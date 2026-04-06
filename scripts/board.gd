@@ -9,9 +9,17 @@ var cell_size = globals.CELL_SIZE
 var light_cell_color = globals.BOARD_COLORS[0]
 var dark_cell_color = globals.BOARD_COLORS[1]
 var cells = []
+var pieces = {
+	globals.PIECE_COLORS.WHITE: [],
+	globals.PIECE_COLORS.BLACK: []
+}
 
 func _ready() -> void:
 	SignalBus.piece_moved.connect(_on_piece_droped)
+	SignalBus.gane_won.connect(handle_game_won)
+	
+func handle_game_won():
+	pass
 	
 func _process(delta: float) -> void:
 	pass
@@ -36,6 +44,7 @@ func init_board():
 			elif coordinates in globals.INITIAL_POSITION_MAPPING[globals.PIECE_COLORS.BLACK]:
 				piece = instantiate_piece(Vector2(x, y), globals.PIECE_COLORS.BLACK)
 			if piece:
+				pieces[piece.color].append(piece)
 				piece.board_handle = self
 				cell.piece = piece
 				piece.cell = cell
@@ -63,6 +72,10 @@ func _on_piece_droped(piece: Piece):
 		cell.piece = piece
 		if should_promote(piece):
 			piece.promote()
+		if not pieces[globals.PIECE_COLORS.WHITE]:
+			SignalBus.game_won.emit(globals.PIECE_COLORS.BLACK)
+		elif not pieces[globals.PIECE_COLORS.BLACK]:
+			SignalBus.game_won.emit(globals.PIECE_COLORS.WHITE)
 	
 func get_cell(board_coordinates: Array) -> Cell:
 	for cell in cells:
