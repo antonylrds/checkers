@@ -11,3 +11,7 @@ func _ready() -> void:
 	var viewport_size = get_viewport().get_visible_rect().size
 	board.position = Vector2(viewport_size.x/2 - offset_board_size_x, viewport_size.y/2 - offset_board_size_y)
 	board.init_board()
+	SignalBus.game_won.connect(handle_game_won)
+	
+func handle_game_won(color):
+	board.init_board()

@@ -16,16 +16,23 @@ var pieces = {
 
 func _ready() -> void:
 	SignalBus.piece_moved.connect(_on_piece_droped)
-	SignalBus.gane_won.connect(handle_game_won)
-	
-func handle_game_won():
-	pass
-	
+
 func _process(delta: float) -> void:
 	pass
-
+	
+func reset_game():
+	for piece in pieces[globals.PIECE_COLORS.WHITE]:
+		piece.queue_free()
+	for piece in pieces[globals.PIECE_COLORS.BLACK]:
+		piece.queue_free()
+	pieces = {
+		globals.PIECE_COLORS.WHITE: [],
+		globals.PIECE_COLORS.BLACK: []
+	}
+	cells = []
 
 func init_board():
+	reset_game()
 	var piece: Piece = null
 	for x in range(board_size_x):
 		for y in range(board_size_y):
@@ -72,9 +79,12 @@ func _on_piece_droped(piece: Piece):
 		cell.piece = piece
 		if should_promote(piece):
 			piece.promote()
+		print(pieces)
 		if not pieces[globals.PIECE_COLORS.WHITE]:
+			print("1")
 			SignalBus.game_won.emit(globals.PIECE_COLORS.BLACK)
 		elif not pieces[globals.PIECE_COLORS.BLACK]:
+			print("2")
 			SignalBus.game_won.emit(globals.PIECE_COLORS.WHITE)
 	
 func get_cell(board_coordinates: Array) -> Cell:
@@ -110,13 +120,12 @@ func is_valid_move(piece: Piece, dest_cell: Cell):
 			var middle_x = dest_coordinate[0] + 1 if dest_coordinate[0] < last_coordinate[0] else dest_coordinate[0] - 1
 			var middle_y = dest_coordinate[1] + 1 if dest_coordinate[1] < last_coordinate[1] else dest_coordinate[1] - 1
 			var middle_cell = get_cell([middle_x, middle_y])
-			print("middle",middle_cell.board_coordinate)
 			if not middle_cell.piece:
 				return false
 			elif middle_cell.piece.color == piece.color:
 				return false
 			else:
-				middle_cell.piece.queue_free()
+				remove_piece(middle_cell.piece)
 		elif diff[0] > 0 and diff[1] > 0:
 			if (
 				dest_coordinate[1] < last_coordinate[1] and piece.color == globals.PIECE_COLORS.WHITE or
@@ -124,14 +133,14 @@ func is_valid_move(piece: Piece, dest_cell: Cell):
 			):
 				return false
 	else:
-		var cells_found = beam_piece_search(last_coordinate, dest_coordinate)
-		if len(cells_found) > 1:
+		var pieces_found = beam_piece_search(last_coordinate, dest_coordinate)
+		if len(pieces_found) > 1:
 			return false
-		if len(cells_found) == 1:
-			if cells_found[0].color == piece.color:
+		if len(pieces_found) == 1:
+			if pieces_found[0].color == piece.color:
 				return false
 			else:
-				cells_found[0].queue_free()
+				remove_piece(pieces_found[0])
 	return true
 	
 func beam_piece_search(last: Array, dest: Array) -> Array[Piece]:
@@ -155,8 +164,6 @@ func beam_piece_search(last: Array, dest: Array) -> Array[Piece]:
 		
 
 func get_coordinate_diff(initial: Array, dest: Array):
-	print("intial", initial)
-	print("dest", dest)
 	return [
 		abs(initial[0] - dest[0]),
 		abs(initial[1] - dest[1]),
@@ -171,3 +178,14 @@ func should_promote(piece: Piece):
 	):
 		return true
 	return false
+	
+func remove_piece(piece: Piece):
+	var pieces_arr = pieces[piece.color]
+	var to_pop = 9999
+	for index in range(len(pieces_arr)):
+		if pieces_arr[index] == piece:
+			to_pop = index
+	if to_pop < 9999:
+		pieces_arr.pop_at(to_pop)
+	piece.queue_free()
+	
